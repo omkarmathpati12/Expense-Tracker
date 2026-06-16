@@ -18,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -25,48 +26,52 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRequest userRequest) {
-        UserResponse response=userService.createUser(userRequest);
+        UserResponse response = userService.createUser(userRequest);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser( @PathVariable Long id, @Valid @RequestBody UpdateUserRequest req) {
-        UserResponse update=userService.updateUser(id,req);
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest req
+    ) {
+        UserResponse update = userService.updateUser(id, req);
         return ResponseEntity.ok(update);
-
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        String delete=userService.deleteUser(id);
+        String delete = userService.deleteUser(id);
         return ResponseEntity.ok(delete);
     }
 
     @GetMapping("{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        UserResponse response=userService.getUserById(id);
+        UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users=userService.getAllUsers();
+        List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
-
     }
 
     @PostMapping("/login")
-    public String  login(@Valid @RequestBody LoginRequest loginRequest) {
-        Authentication authentication=authenticationManager.authenticate(
+    public UserResponse login(@Valid @RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
                         loginRequest.getPassword()
                 )
         );
 
-        if(authentication.isAuthenticated()){
-            return "Login sucessfull";
+        if (!authentication.isAuthenticated()) {
+            throw new RuntimeException("Login failed");
         }
-        return "Login failed";
+
+        return userService.getUserByEmail(loginRequest.getEmail());
     }
+
 }
+

@@ -45,19 +45,21 @@ public class TransactionImpl implements TransactionService {
     public TransactionResponse updateTransaction(Long id, TransactionRequest request) {
 
         log.info("Updating Transaction");
+        Transaction transaction = transactionRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+        
         User user=userRepo.findById(request.getUser().getUserId())
                 .orElseThrow(()-> new ResourceNotFoundException("User not found"));
-        Transaction transaction =Transaction.builder()
-                .amount(request.getAmount())
-                .description(request.getDescription())
-                .category(request.getCategory())
-                .notes(request.getNotes())
-                .createdAt(request.getCreatedAt())
-                .user(user)
-                .build();
+        
+        if(request.getAmount() != null) transaction.setAmount(request.getAmount());
+        if(request.getDescription() != null) transaction.setDescription(request.getDescription());
+        if(request.getCategory() != null) transaction.setCategory(request.getCategory());
+        if(request.getNotes() != null) transaction.setNotes(request.getNotes());
+        if(request.getCreatedAt() != null) transaction.setCreatedAt(request.getCreatedAt());
+        transaction.setUser(user);
 
         Transaction transaction1=transactionRepo.save(transaction);
-        log.info("Transaction updated with id {}", transaction.getId());
+        log.info("Transaction updated with id {}", transaction1.getId());
         return TransactionResponse.from(transaction1);
     }
 

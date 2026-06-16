@@ -34,8 +34,9 @@ public class User {
     private LocalDateTime updatedAt;
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Boolean isActive=true;
+    private UserStatus status = UserStatus.ACTIVE;
     @OneToMany(mappedBy = "user")
     private List<Transaction> transactions=new ArrayList<>();
 }

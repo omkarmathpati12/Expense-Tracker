@@ -6,6 +6,7 @@ import com.SmartExpenseTracker.dto.response.UserResponse;
 import com.SmartExpenseTracker.exceptions.DuplicateEmailException;
 import com.SmartExpenseTracker.exceptions.ResourceNotFoundException;
 import com.SmartExpenseTracker.model.Role;
+import com.SmartExpenseTracker.model.UserStatus;
 import com.SmartExpenseTracker.model.Transaction;
 import com.SmartExpenseTracker.model.User;
 import com.SmartExpenseTracker.repository.UserRepo;
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
-                .isActive(true)
+                .status(request.getStatus() != null ? request.getStatus() : UserStatus.ACTIVE)
                 .build();
 
         return UserResponse.from(userRepo.save(user));
@@ -48,8 +49,15 @@ public class UserServiceImpl implements UserService {
         User user=userRepo.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("User not found"));
         if(req.getName() !=null) user.setName(req.getName());
+        if(req.getEmail() !=null) {
+            if(userRepo.existsByEmail(req.getEmail()) && !user.getEmail().equals(req.getEmail())) {
+                throw new DuplicateEmailException("Email already exists " + req.getEmail());
+            }
+            user.setEmail(req.getEmail());
+        }
+        if(req.getPassword() !=null) user.setPassword(passwordEncoder.encode(req.getPassword()));
         if (req.getRole() !=null) user.setRole(req.getRole());
-        if(req.getActive() !=null)  user.setIsActive(req.getActive());
+        if(req.getStatus() !=null)  user.setStatus(req.getStatus());
         log.info("User with id {} updated", id);
         return UserResponse.from(userRepo.save(user));
     }
@@ -83,10 +91,19 @@ public class UserServiceImpl implements UserService {
                         .name(user.getName())
                         .email(user.getEmail())
                         .role(user.getRole())
+                        .status(user.getStatus())
                         .createdAt(user.getCreatedAt())
-                        .isActive(user.getIsActive())
                         .build())
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserByEmail(String email) {
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return UserResponse.from(user);
+    }
+
 }
+
